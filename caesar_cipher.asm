@@ -35,8 +35,8 @@ section .data                       ; Section for initialized data
     DecOptLen: equ $-DecOpt
     EncResultPreMsg: db "The encrypted message is "
     EncResultPreMsgLen: equ $-EncResultPreMsg
-    DecResultsPreMsg: db "The decrypted message is "
-    DecResultPreMsgLen: equ $-DecResultsPreMsg
+    DecResultPreMsg: db "The decrypted message is "
+    DecResultPreMsgLen: equ $-DecResultPreMsg
     newline: db 0Ah
 
 ; The translation table shifts all alphabets forward by 3 mimicking the Caesar Cipher
@@ -115,7 +115,7 @@ main:
     syscall                         ; Make kernel call
     
 ; Prepare registers to collect user's feedback:
-;    mov r12,OptBuff               ; Put the address of the option buffer in r12
+    mov r15,OptBuff                 ; Put the address of the option buffer in r15
     
 
 ; Read the user's option:
@@ -144,9 +144,9 @@ ReadMsg:
 ; Decide the operation to be performed according to the user's option
     mov rcx,MsgBuff                 ; Put the address of the message buffer in rcx register
     mov r12,rbp                     ; Copy the number of bytes read into r12 register
-    cmp byte [OptBuff],'1'          ; Start an encryption operation if the user choses option 1
+    cmp byte [r15],'1'              ; Start an encryption operation if the user choses option 1
     je Encrypt                      ; Jump to Encryption procedure if option 1 is chosen
-    cmp byte [OptBuff],'2'          ; Start a decryption operation if the user choses option 2
+    cmp byte [r15],'2'              ; Start a decryption operation if the user choses option 2
     je Decrypt                      ; Jump to Decryption procedure if option 2 is chosen
     
 Encrypt:
@@ -165,8 +165,8 @@ Encrypt:
     syscall                         ; Make the kernel call
 
 ; Prepare registers for the encryption operation
-    mov rbx,CaesarCipherEncrypt
-    jmp translate
+    mov rbx,CaesarCipherEncrypt     ; Put the address of encryption translation table in rbx register
+    jmp translate                   ; Translate the chrarcters using the translation table
    
 Decrypt:    
 ; Print Newline:
@@ -186,8 +186,8 @@ Decrypt:
     jmp Done
     
     ; Prepare registers for the decryption operation
-    mov rbx,CaesarCipherDecrypt
-    jmp translate
+    mov rbx,CaesarCipherDecrypt     ; Put the address of decryption translation table in rbx register
+    jmp translate                   ; Translate the chrarcters using the translation table
     
 translate:
     xor rax,rax                     ; Clear out the RAX register to be used for character translation
@@ -195,17 +195,39 @@ translate:
     mov al, byte [rbx+rax]          ; Translate the fetched character using encryption translation table
     mov byte [r12], al              ; Put the translation result back into the buffer
     dec r12                         ; Decrement the number of characters in the buffer
-    jnz translate
-    jmp WriteBuffer
+    jnz translate                   ; Keep translating the characters if buffer is not empty
+    jmp WriteResult                 ; Jump to the operation if translation is complete
 
     
-WriteBuffer:
+WriteResult:
+    cmp byte [r15],'1'
+    jmp WriteEncResultPreMsg
+    cmp byte [r15],'2'
+    jmp WriteDecResultPreMsg
+    
+WriteEncResultPreMsg:
+    mov rax,1                       ; Declare sys_write operation
+    mov rdi,1                       ; Use File Descriptor 1 ie stdout
+    mov rsi,EncResultPreMsg         ; Pass the address of the message buffer
+    mov rdx,EncResultPreMsgLen      ; Pass the # of bytes in the message buffer
+    syscall                         ; Make kernel call
+    jmp WriteOptRes                 ; Jump to the procedure which outputs the content of the encrypted message
+    
+WriteDecResultPreMsg:
+    mov rax,1                       ; Declare sys_write operation
+    mov rdi,1                       ; Use File Descriptor 1 ie stdout
+    mov rsi,DecResultPreMsg        ; Pass the address of the message buffer
+    mov rdx,DecResultPreMsgLen     ; Pass the # of bytes in the message buffer
+    syscall                         ; Make kernel call
+    jmp WriteOptRes                 ; Jump to the procedure which outputs the content of the decrypted message
+
+WriteOptRes:
     mov rax,1                       ; Declare sys_write operation
     mov rdi,1                       ; Use File Descriptor 1 ie stdout
     mov rsi,MsgBuff                 ; Pass the address of the message buffer
     mov rdx,rbp                     ; Pass the # of bytes in the message buffer
     syscall                         ; Make kernel call
-    jmp ReadMsg
+    jmp ReadMsg                     ; Loop back and load another buffer with with text from stdin
 
 Done:
     mov rax,1                       ; Declare a sys_write call operation
