@@ -3,7 +3,7 @@
 ;   Created date    : Mon, 07/08/2026
 ;   Last Update     : Mon, 07/08/2026
 ;   Author          : Opoku N. Chris
-;   Description     : An assembly language program that encrypts text using Caesar
+;   Description     : A utility program that encrypts text using Caesar
 ;                     Cipher algorithm
 ;
 ;

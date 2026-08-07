@@ -3,7 +3,7 @@
 ;   Created date    : Mon, 07/08/2026
 ;   Last Update     : Mon, 07/08/2026
 ;   Author          : Opoku N. Chris
-;   Description     : An assembly language program that encypts 
+;   Description     : A utility program that encrypts 
 ;                     and decrypts text using Caesar Cipher algorithm
 ;
 ; Build using these commands:
