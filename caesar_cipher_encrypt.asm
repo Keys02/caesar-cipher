@@ -5,7 +5,7 @@ section .data                       ; Section for initialized data
     DoneLen: equ $-DoneMsg
 
 ; The translation table shifts all alphabets by 3 mimicking the Caesar Cipher algorithm
-    CaesarCipher:
+    CaesarCipherEncrypt:
     db 00h, 01h, 02h, 03h, 04h, 05h, 06h, 07h, 08h, 09h, 0Ah, 0Bh, 0Ch, 0Dh, 0Eh, 0Fh
     db 10h, 11h, 12h, 13h, 14h, 15h, 16h, 17h, 18h, 19h, 1Ah, 1Bh, 1Ch, 1Dh, 1Eh, 1Fh
     db 20h, 21h, 22h, 23h, 24h, 25h, 26h, 27h, 28h, 29h, 2Ah, 2Bh, 2Ch, 2Dh, 2Eh, 2Fh
@@ -53,7 +53,7 @@ read:
     je Done                         ; Jump if the read operation returned zero(0)
     
 ; Set up the registers for the translate step:
-    mov rbx,CaesarCipher            ; Put the address of the table into rbx
+    mov rbx,CaesarCipherEncrypt            ; Put the address of the table into rbx
     mov rdx,ReadBuffer              ; Put the address of the buffer into rdx
     mov rcx,rbp                     ; Put the number of bytes into rcx
     
