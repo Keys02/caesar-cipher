@@ -27,6 +27,12 @@ section .data                   ; Section for initialized data
     StatDecLen: equ $-StatDecMsg     
     DoneMsg: db "..done!",0Ah
     DoneLen: equ $-DoneMsg
+    Quest: db "Do you want perform an Encryption/Decryption",0Ah
+    QuestLen: equ $-Quest
+    EncOpt: db "1: Encryption",0Ah
+    EncOptLen: equ $-EncOpt
+    DecOpt: db "2: Decryption",0Ah
+    DecOptLen: equ $-DecOpt
 
 ; The translation table shifts all alphabets forward by 3 mimicking the Caesar Cipher
 ; encryption algorithm
@@ -68,13 +74,57 @@ section .data                   ; Section for initialized data
     db 0E0h,0E1h,0E2h,0E3h,0E4h,0E5h,0E6h,0E7h,0E8h,0E9h,0EAh,0EBh,0ECh,0EDh,0EEh,0EFh
     db 0F0h,0F1h,0F2h,0F3h,0F4h,0F5h,0F6h,0F7h,0F8h,0F9h,0FAh,0FBh,0FCh,0FDh,0FEh,0FFh
         
-section .bss                    ; Section for uninitialized data
+section .bss                        ; Section for uninitialized data
+    OPTLEN equ 1                    ; Define the length of the encryption & decryption option buffer
+    MSGLEN equ 1024                 ; Define the length of the message buffer
+    OptBuffer: resb OPTLEN          ; Define the buffer to take user's option    
+    MessageBuffer: resb MSGLEN      ; Define the buffer to take user's message to be encrypted or decrypted
 
 
-section .text                   ; Section for the code
+section .text                       ; Section for the code
 
-global main                     ; Define the entry point of the program for the linker
+global main                         ; Define the entry point of the program for the linker
 
 main:
-    mov rbp,rsp                 ; Put the stack pointer in the extension base pointer, Debugger --> :)
+    mov rbp,rsp                     ; Put the stack pointer in the extension base pointer, Debugger --> :)
+    
+    ; Write the Question
+    mov rax,1                       ; Declare a sys_write operation
+    mov rdi,1                       ; Use file descriptor 1 ie stdout
+    mov rsi,Quest                   ; Pass the address of the question message
+    mov rdx,QuestLen                ; Pass the # of bytes of the question message
+    syscall                         ; Make kernel call
+    
+    ; Write the "Encryption" option message
+    mov rax,1                       ; Declare a sys_write operation
+    mov rdi,1                       ; Use file descriptor 1 ie stdout
+    mov rsi,EncOpt                  ; Pass the address of the encryption option
+    mov rdx,EncOptLen               ; Pass the # of bytes of encryption option
+    syscall                         ; Make kernel call
+    
+    ; Write the "Decryption" option message
+    mov rax,1                       ; Declare a sys_write operation
+    mov rdi,1                       ; Use file descriptor 1 ie stdout
+    mov rsi,DecOpt                  ; Pass the address of the decryption option
+    mov rdx,DecOptLen               ; Pass the # of bytes of decryption option
+    syscall                         ; Make kernel call
+
+    ; Read the user's option    
+Read:
+    mov rax,0                       ; Declare a sys_read operation
+    mov rdi,0                       ; Use File Descriptor 0 ie stdin
+    mov rsi,OptBuffer               ; Pass the address of the buffer to read the user option to
+    mov rdx,OPTLEN                  ; Pass the number of bytes to read at one pass
+    syscall                         ; Make kernel call
+    
+Done:
+    mov rax,1                       ; Declare a sys_write call operation
+    mov rdi,2                       ; Specify File Descriptor 2 ie stderr
+    mov rsi,DoneMsg                 ; Pass address of the message
+    mov rdx,DoneLen                 ; Pass the length of the message
+    syscall                         ; Make kernel call
+    
+; All done! 
+    ret                             ; Return to the glibc shutdown code
+    
         
