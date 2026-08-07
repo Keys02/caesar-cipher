@@ -82,8 +82,8 @@ section .data                       ; Section for initialized data
 section .bss                        ; Section for uninitialized data
     OPTLEN equ 1                    ; Define the length of the encryption & decryption option buffer
     MSGLEN equ 1024                 ; Define the length of the message buffer
-    OptBuffer: resb OPTLEN          ; Define the buffer to take user's option    
-    MessageBuffer: resb MSGLEN      ; Define the buffer to take user's message to be encrypted or decrypted
+    OptBuff: resb OPTLEN            ; Define the buffer to take user's option    
+    MsgBuff: resb MSGLEN            ; Define the buffer to take user's message to be encrypted or decrypted
 
 
 section .text                       ; Section for the code
@@ -93,69 +93,90 @@ global main                         ; Define the entry point of the program for 
 main:
     mov rbp,rsp                     ; Put the stack pointer in the extension base pointer, Debugger --> :)
     
-    ; Write the Question
+; Write the Question:
     mov rax,1                       ; Declare a sys_write operation
     mov rdi,1                       ; Use file descriptor 1 ie stdout
     mov rsi,Quest                   ; Pass the address of the question message
     mov rdx,QuestLen                ; Pass the # of bytes of the question message
     syscall                         ; Make kernel call
     
-    ; Write the "Encryption" option message
+; Write the "Encryption" option message:
     mov rax,1                       ; Declare a sys_write operation
     mov rdi,1                       ; Use file descriptor 1 ie stdout
     mov rsi,EncOpt                  ; Pass the address of the encryption option
     mov rdx,EncOptLen               ; Pass the # of bytes of encryption option
     syscall                         ; Make kernel call
     
-    ; Write the "Decryption" option message
+; Write the "Decryption" option message:
     mov rax,1                       ; Declare a sys_write operation
     mov rdi,1                       ; Use file descriptor 1 ie stdout
     mov rsi,DecOpt                  ; Pass the address of the decryption option
     mov rdx,DecOptLen               ; Pass the # of bytes of decryption option
     syscall                         ; Make kernel call
     
-    ; Prepare registers to collect user's feedback
-    mov r12,OptBuffer               ; Put the address of the option buffer in r12
+; Prepare registers to collect user's feedback:
+;    mov r12,OptBuff               ; Put the address of the option buffer in r12
     
 
-    ; Read the user's option    
-Read:
+; Read the user's option:
+ReadOpt:
     mov rax,0                       ; Declare a sys_read operation
     mov rdi,0                       ; Use File Descriptor 0 ie stdin
-    mov rsi,OptBuffer               ; Pass the address of the buffer to read the user option to
+    mov rsi,OptBuff                 ; Pass the address of the buffer to read the user option to
     mov rdx,OPTLEN                  ; Pass the number of bytes to read at one pass
     syscall                         ; Make kernel call
-    cmp byte [r12],'1'              ; Start an encryption operation if the user choses option 1
-    je Encrypt
-    cmp byte [r12],'2'              ; Start a decryption operation if the user choses option 2
-    je Decrypt
+;    cmp byte [OptBuff],'1'          ; Start an encryption operation if the user choses option 1
+;    je Encrypt                      ; Jump to Encryption procedure if option 1 is chosen
+;    cmp byte [OptBuff],'2'          ; Start a decryption operation if the user choses option 2
+;   je Decrypt                      ; Jump to Decryption procedure if option 2 is chosen
+
+ReadMsg:
+; Read the message to be encrypted into a buffer
+    mov rax,0                       ; Declare a sys_read operation
+    mov rdi,0                       ; Use File Descriptor 0 ie stdin
+    mov rsi,MsgBuff                 ; Pass the address of the buffer to read the message to
+    mov rdx,MSGLEN                  ; Pass the # of bytes to read
+    syscall                         ; Make kernel call
+    mov rbp,rax                     ; Put the sys_read return value in rbp register
+    cmp rax,0                       ; Check if there is no character to be read from stdin
+    je Done                         ; End the program if there is no character to be read from stdin
+    
+; Decide the operation to be performed according to the user's option
+    mov rcx,MsgBuff                 ; Put the address of the message buffer in rcx register
+    mov r12,rbp                     ; Copy the number of bytes read into r12 register
+    cmp byte [OptBuff],'1'          ; Start an encryption operation if the user choses option 1
+    je Encrypt                      ; Jump to Encryption procedure if option 1 is chosen
+    cmp byte [OptBuff],'2'          ; Start a decryption operation if the user choses option 2
+    je Decrypt                      ; Jump to Decryption procedure if option 2 is chosen
     
 Encrypt:
-    ; Print Newline:
+; Print Newline:
     mov rax,1                       ; Declare sys_write operation
     mov rdi,1                       ; Use file descriptior 1 ie stdout
     mov rsi,newline                 ; Pass the address of the newline character
     mov rdx,1                       ; Pass the length of the newline character
     syscall                         ; Make the sys_write system call
     
-    ; Display the encryption status message via stderr:
+; Display the encryption status message via stderr:
     mov rax,1                       ; Declare a sys_write operation
     mov rdi,2                       ; Use File Descriptor 2 ie stderr
     mov rsi,StatEncMsg              ; Pass the address of the message
     mov rdx,StatEncLen              ; Pass the length of the message
     syscall                         ; Make the kernel call
-    
-    jmp Done
 
+; Prepare registers for the encryption operation
+    mov rbx,CaesarCipherEncrypt
+    jmp translate
+   
 Decrypt:    
-    ; Print Newline:
+; Print Newline:
     mov rax,1                       ; Declare sys_write operation
-    mov rdi,1                       ; Use file descriptior 1 ie stdout
+    mov rdi,1                       ; Use File Descriptior 1 ie stdout
     mov rsi,newline                 ; Pass the address of the newline character
     mov rdx,1                       ; Pass the length of the newline character
     syscall                         ; Make the sys_write system call
     
-    ; Display the decryption status message via stderr:
+; Display the decryption status message via stderr:
     mov rax,1                       ; Declare a sys_write operation
     mov rdi,2                       ; Use File Descriptor 2 ie stderr
     mov rsi,StatDecMsg              ; Pass the address of the message
@@ -163,6 +184,20 @@ Decrypt:
     syscall                         ; Make the kernel call
 
     jmp Done
+    
+    ; Prepare registers for the decryption operation
+    mov rbx,CaesarCipherDecrypt
+    jmp translate
+    
+translate:
+    xor rax,rax                     ; Clear out the RAX register to be used for character translation
+    mov al, byte [rcx-1+r12]        ; Fetch a character from the message buffer
+    mov al, byte [rbx+rax]          ; Translate the fetched character using encryption translation table
+    mov byte [r12], al              ; Put the translation result back into the buffer
+    dec r12                         ; Decrement the number of characters in the buffer
+    jnz translate
+    jmp WriteBuffer
+
     
 Done:
     mov rax,1                       ; Declare a sys_write call operation
