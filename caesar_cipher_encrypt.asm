@@ -4,7 +4,8 @@ section .data                       ; Section for initialized data
     DoneMsg: db "..done!",0Ah
     DoneLen: equ $-DoneMsg
 
-; The translation table shifts all alphabets by 3 mimicking the Caesar Cipher algorithm
+; The translation table shifts all alphabets forward by 3 mimicking the Caesar Cipher
+; encryption algorithm
     CaesarCipherEncrypt:
     db 00h, 01h, 02h, 03h, 04h, 05h, 06h, 07h, 08h, 09h, 0Ah, 0Bh, 0Ch, 0Dh, 0Eh, 0Fh
     db 10h, 11h, 12h, 13h, 14h, 15h, 16h, 17h, 18h, 19h, 1Ah, 1Bh, 1Ch, 1Dh, 1Eh, 1Fh
@@ -57,7 +58,7 @@ read:
     mov rdx,ReadBuffer              ; Put the address of the buffer into rdx
     mov rcx,rbp                     ; Put the number of bytes into rcx
     
-; Use the xlat instruction to translate the data in the buffer:
+; Use the xlat or mov instruction to translate the data in the buffer:
 translate:
     xor rax,rax                     ; Clear out RAX register
     mov al,byte [rdx-1+rcx]         ; Load character from the buffer into AL register for translation
