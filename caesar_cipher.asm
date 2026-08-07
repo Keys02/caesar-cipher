@@ -20,7 +20,7 @@
 ;
 ;   If an output file is not specified, output goes to stdout
 
-section .data                   ; Section for initialized data
+section .data                       ; Section for initialized data
     StatEncMsg: db "Encrypting...",0Ah
     StatEncLen: equ $-StatEncMsg
     StatDecMsg: db "Decrypting...",0Ah
@@ -33,6 +33,7 @@ section .data                   ; Section for initialized data
     EncOptLen: equ $-EncOpt
     DecOpt: db "2: Decryption",0Ah
     DecOptLen: equ $-DecOpt
+    newline: db 0Ah
 
 ; The translation table shifts all alphabets forward by 3 mimicking the Caesar Cipher
 ; encryption algorithm
@@ -108,6 +109,10 @@ main:
     mov rsi,DecOpt                  ; Pass the address of the decryption option
     mov rdx,DecOptLen               ; Pass the # of bytes of decryption option
     syscall                         ; Make kernel call
+    
+    ; Prepare registers to collect user's feedback
+    mov r12,OptBuffer               ; Put the address of the option buffer in r12
+    
 
     ; Read the user's option    
 Read:
@@ -116,6 +121,44 @@ Read:
     mov rsi,OptBuffer               ; Pass the address of the buffer to read the user option to
     mov rdx,OPTLEN                  ; Pass the number of bytes to read at one pass
     syscall                         ; Make kernel call
+    cmp byte [r12],'1'              ; Start an encryption operation if the user choses option 1
+    je Encrypt
+    cmp byte [r12],'2'              ; Start a decryption operation if the user choses option 2
+    je Decrypt
+    
+Encrypt:
+    ; Print Newline:
+    mov rax,1                       ; Declare sys_write operation
+    mov rdi,1                       ; Use file descriptior 1 ie stdout
+    mov rsi,newline                 ; Pass the address of the newline character
+    mov rdx,1                       ; Pass the length of the newline character
+    syscall                         ; Make the sys_write system call
+    
+    ; Display the encryption status message via stderr:
+    mov rax,1                       ; Declare a sys_write operation
+    mov rdi,2                       ; Use File Descriptor 2 ie stderr
+    mov rsi,StatEncMsg              ; Pass the address of the message
+    mov rdx,StatEncLen              ; Pass the length of the message
+    syscall                         ; Make the kernel call
+    
+    jmp Done
+
+Decrypt:    
+    ; Print Newline:
+    mov rax,1                       ; Declare sys_write operation
+    mov rdi,1                       ; Use file descriptior 1 ie stdout
+    mov rsi,newline                 ; Pass the address of the newline character
+    mov rdx,1                       ; Pass the length of the newline character
+    syscall                         ; Make the sys_write system call
+    
+    ; Display the decryption status message via stderr:
+    mov rax,1                       ; Declare a sys_write operation
+    mov rdi,2                       ; Use File Descriptor 2 ie stderr
+    mov rsi,StatDecMsg              ; Pass the address of the message
+    mov rdx,StatDecLen              ; Pass the length of the message
+    syscall                         ; Make the kernel call
+
+    jmp Done
     
 Done:
     mov rax,1                       ; Declare a sys_write call operation

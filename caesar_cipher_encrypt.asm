@@ -77,7 +77,7 @@ read:
     je done                         ; Jump if the read operation returned zero(0)
     
 ; Set up the registers for the translate step:
-    mov rbx,CaesarCipherEncrypt            ; Put the address of the table into rbx
+    mov rbx,CaesarCipherEncrypt     ; Put the address of the table into rbx
     mov rdx,ReadBuffer              ; Put the address of the buffer into rdx
     mov rcx,rbp                     ; Put the number of bytes into rcx
     
