@@ -33,6 +33,10 @@ section .data                       ; Section for initialized data
     EncOptLen: equ $-EncOpt
     DecOpt: db "2: Decryption",0Ah
     DecOptLen: equ $-DecOpt
+    EncResultPreMsg: db "The encrypted message is "
+    EncResultPreMsgLen: equ $-EncResultPreMsg
+    DecResultsPreMsg: db "The decrypted message is "
+    DecResultPreMsgLen: equ $-DecResultsPreMsg
     newline: db 0Ah
 
 ; The translation table shifts all alphabets forward by 3 mimicking the Caesar Cipher
