@@ -199,6 +199,14 @@ translate:
     jmp WriteBuffer
 
     
+WriteBuffer:
+    mov rax,1                       ; Declare sys_write operation
+    mov rdi,1                       ; Use File Descriptor 1 ie stdout
+    mov rsi,MsgBuff                 ; Pass the address of the message buffer
+    mov rdx,rbp                     ; Pass the # of bytes in the message buffer
+    syscall                         ; Make kernel call
+    jmp ReadMsg
+
 Done:
     mov rax,1                       ; Declare a sys_write call operation
     mov rdi,2                       ; Specify File Descriptor 2 ie stderr
