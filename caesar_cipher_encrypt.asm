@@ -74,7 +74,7 @@ read:
     syscall                         ; Make kernel call
     mov rbp,rax                     ; Copy sys_read return value for use later
     cmp rax,0                       ; If rax=0, sys_read reached EOF
-    je Done                         ; Jump if the read operation returned zero(0)
+    je done                         ; Jump if the read operation returned zero(0)
     
 ; Set up the registers for the translate step:
     mov rbx,CaesarCipherEncrypt            ; Put the address of the table into rbx
@@ -100,7 +100,7 @@ write:
     syscall                         ; Make kernel call
     jmp read
     
-Done:
+done:
     mov rax,1                       ; Declare a sys_write call operation
     mov rdi,2                       ; Specify File Descriptor 2 ie stderr
     mov rsi,DoneMsg                 ; Pass address of the message
