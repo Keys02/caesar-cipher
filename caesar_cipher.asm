@@ -28,11 +28,9 @@ section .data                       ; Section for initialized data
     DoneMsg: db "..done!",0Ah
     DoneLen: equ $-DoneMsg
     Quest: db "Do you want perform an Encryption/Decryption",0Ah
+           db "1: Encryption",0Ah
+           db "2: Decryption",0Ah
     QuestLen: equ $-Quest
-    EncOpt: db "1: Encryption",0Ah
-    EncOptLen: equ $-EncOpt
-    DecOpt: db "2: Decryption",0Ah
-    DecOptLen: equ $-DecOpt
     EncResultPreMsg: db "The encrypted message is "
     EncResultPreMsgLen: equ $-EncResultPreMsg
     DecResultPreMsg: db "The decrypted message is "
@@ -100,36 +98,17 @@ main:
     mov rdx,QuestLen                ; Pass the # of bytes of the question message
     syscall                         ; Make kernel call
     
-; Write the "Encryption" option message:
-    mov rax,1                       ; Declare a sys_write operation
-    mov rdi,1                       ; Use file descriptor 1 ie stdout
-    mov rsi,EncOpt                  ; Pass the address of the encryption option
-    mov rdx,EncOptLen               ; Pass the # of bytes of encryption option
-    syscall                         ; Make kernel call
-    
-; Write the "Decryption" option message:
-    mov rax,1                       ; Declare a sys_write operation
-    mov rdi,1                       ; Use file descriptor 1 ie stdout
-    mov rsi,DecOpt                  ; Pass the address of the decryption option
-    mov rdx,DecOptLen               ; Pass the # of bytes of decryption option
-    syscall                         ; Make kernel call
-    
 ; Prepare registers to collect user's feedback:
     mov r15,OptBuff                 ; Put the address of the option buffer in r15
     
-
 ; Read the user's option:
 ReadOpt:
     mov rax,0                       ; Declare a sys_read operation
     mov rdi,0                       ; Use File Descriptor 0 ie stdin
     mov rsi,OptBuff                 ; Pass the address of the buffer to read the user option to
-    mov rdx,OPTLEN                  ; Pass the number of bytes to read at one pass
+    mov rdx,OPTLEN                  ; Pass the # of bytes to read at one pass
     syscall                         ; Make kernel call
-;    cmp byte [OptBuff],'1'          ; Start an encryption operation if the user choses option 1
-;    je Encrypt                      ; Jump to Encryption procedure if option 1 is chosen
-;    cmp byte [OptBuff],'2'          ; Start a decryption operation if the user choses option 2
-;   je Decrypt                      ; Jump to Decryption procedure if option 2 is chosen
-
+    nop
 ReadMsg:
 ; Read the message to be encrypted into a buffer
     mov rax,0                       ; Declare a sys_read operation
@@ -140,16 +119,7 @@ ReadMsg:
     mov rbp,rax                     ; Put the sys_read return value in rbp register
     cmp rax,0                       ; Check if there is no character to be read from stdin
     je Done                         ; End the program if there is no character to be read from stdin
-    
-; Decide the operation to be performed according to the user's option
-    mov rcx,MsgBuff                 ; Put the address of the message buffer in rcx register
-    mov r12,rbp                     ; Copy the number of bytes read into r12 register
-    cmp byte [r15],'1'              ; Start an encryption operation if the user choses option 1
-    je Encrypt                      ; Jump to Encryption procedure if option 1 is chosen
-    cmp byte [r15],'2'              ; Start a decryption operation if the user choses option 2
-    je Decrypt                      ; Jump to Decryption procedure if option 2 is chosen
-    
-Encrypt:
+        
 ; Print Newline:
     mov rax,1                       ; Declare sys_write operation
     mov rdi,1                       ; Use file descriptior 1 ie stdout
@@ -157,6 +127,15 @@ Encrypt:
     mov rdx,1                       ; Pass the length of the newline character
     syscall                         ; Make the sys_write system call
     
+; Decide the operation to be performed according to the user's option
+    mov rcx,MsgBuff                 ; Put the address of the message buffer in rcx register
+    mov r12,rbp                     ; Copy the number of bytes read into r12 register
+    cmp byte [r15],'1'              ; Start an encryption operation if the user choses option 1
+    je Encrypt                      ; Jump to encryption procedure if option 1 is chosen
+    cmp byte [r15],'2'              ; Start a decryption operation if the user choses option 2
+    je Decrypt                      ; Jump to decryption procedure if option 2 is chosen
+    
+Encrypt:
 ; Display the encryption status message via stderr:
     mov rax,1                       ; Declare a sys_write operation
     mov rdi,2                       ; Use File Descriptor 2 ie stderr
@@ -169,25 +148,16 @@ Encrypt:
     jmp translate                   ; Translate the chrarcters using the translation table
    
 Decrypt:    
-; Print Newline:
-    mov rax,1                       ; Declare sys_write operation
-    mov rdi,1                       ; Use File Descriptior 1 ie stdout
-    mov rsi,newline                 ; Pass the address of the newline character
-    mov rdx,1                       ; Pass the length of the newline character
-    syscall                         ; Make the sys_write system call
-    
 ; Display the decryption status message via stderr:
     mov rax,1                       ; Declare a sys_write operation
     mov rdi,2                       ; Use File Descriptor 2 ie stderr
     mov rsi,StatDecMsg              ; Pass the address of the message
     mov rdx,StatDecLen              ; Pass the length of the message
     syscall                         ; Make the kernel call
-
-    jmp Done
     
-    ; Prepare registers for the decryption operation
+; Prepare registers for the decryption operation:
     mov rbx,CaesarCipherDecrypt     ; Put the address of decryption translation table in rbx register
-    jmp translate                   ; Translate the chrarcters using the translation table
+    jmp translate                   ; Translate the characters using the translation table
     
 translate:
     xor rax,rax                     ; Clear out the RAX register to be used for character translation
@@ -198,7 +168,6 @@ translate:
     jnz translate                   ; Keep translating the characters if buffer is not empty
     jmp WriteResult                 ; Jump to the operation if translation is complete
 
-    
 WriteResult:
     cmp byte [r15],'1'
     jmp WriteEncResultPreMsg
@@ -211,17 +180,17 @@ WriteEncResultPreMsg:
     mov rsi,EncResultPreMsg         ; Pass the address of the message buffer
     mov rdx,EncResultPreMsgLen      ; Pass the # of bytes in the message buffer
     syscall                         ; Make kernel call
-    jmp WriteOptRes                 ; Jump to the procedure which outputs the content of the encrypted message
+    jmp WriteOptResult              ; Jump to the procedure which outputs the content of the encrypted message
     
 WriteDecResultPreMsg:
     mov rax,1                       ; Declare sys_write operation
     mov rdi,1                       ; Use File Descriptor 1 ie stdout
-    mov rsi,DecResultPreMsg        ; Pass the address of the message buffer
-    mov rdx,DecResultPreMsgLen     ; Pass the # of bytes in the message buffer
+    mov rsi,DecResultPreMsg         ; Pass the address of the message buffer
+    mov rdx,DecResultPreMsgLen      ; Pass the # of bytes in the message buffer
     syscall                         ; Make kernel call
-    jmp WriteOptRes                 ; Jump to the procedure which outputs the content of the decrypted message
+    jmp WriteOptResult              ; Jump to the procedure which outputs the content of the decrypted message
 
-WriteOptRes:
+WriteOptResult:
     mov rax,1                       ; Declare sys_write operation
     mov rdi,1                       ; Use File Descriptor 1 ie stdout
     mov rsi,MsgBuff                 ; Pass the address of the message buffer
@@ -238,5 +207,3 @@ Done:
     
 ; All done! 
     ret                             ; Return to the glibc shutdown code
-    
-        
