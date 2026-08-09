@@ -173,12 +173,7 @@ NullTerminateMsgBuff:
                                     ; bytes in the message buffer
     mov r12,rbx                     ; Store the # of bytes in the message buffer in register r12
 
-; Print Newline:
-    mov rax,1                       ; Declare sys_write operation
-    mov rdi,1                       ; Use file descriptior 1 ie stdout
-    mov rsi,newline                 ; Pass the address of the newline character
-    mov rdx,1                       ; Pass the length of the newline character
-    syscall                         ; Make the sys_write system call
+    call Newline                    ; Print a newline
     
 ; Decide the operation to be performed according to the user's option
     cmp byte [OptBuff],'1'          ; Start an encryption operation if the user choses option 1
@@ -252,6 +247,7 @@ WriteOptResult:
     mov rsi,MsgBuff                 ; Pass the address of the message buffer
     mov rdx,r12                     ; Pass the # of bytes in the message buffer
     syscall                         ; Make kernel call
+    call Newline                    ; Print newline
 
 Done:
     mov rax,1                       ; Declare a sys_write call operation
@@ -259,6 +255,15 @@ Done:
     mov rsi,DoneMsg                 ; Pass address of the message
     mov rdx,DoneLen                 ; Pass the length of the message
     syscall                         ; Make kernel call
+
+; Print Newline:
+Newline:
+    mov rax,1                       ; Declare sys_write operation
+    mov rdi,1                       ; Use file descriptior 1 ie stdout
+    mov rsi,newline                 ; Pass the address of the newline character
+    mov rdx,1                       ; Pass the length of the newline character
+    syscall                         ; Make the sys_write system call
+    
     
 ; All done! 
     ret                             ; Return to the glibc shutdown code
