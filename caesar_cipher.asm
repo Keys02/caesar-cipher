@@ -35,9 +35,9 @@ section .data                   ; Section for initialized data
            db "1: Encryption",0Ah
            db "2: Decryption",0Ah
     QuestLen: equ $-Quest
-    EncResultPreMsg: db "The encrypted message is "
+    EncResultPreMsg: db "Encrypted message: "
     EncResultPreMsgLen: equ $-EncResultPreMsg
-    DecResultPreMsg: db "The decrypted message is "
+    DecResultPreMsg: db "Decrypted message: "
     DecResultPreMsgLen: equ $-DecResultPreMsg
     EntryMsg: db "Enter message: "
     EntryMsgLen: equ $-EntryMsg
