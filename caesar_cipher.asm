@@ -24,7 +24,7 @@ default rel                     ; Use Register Instruction Pointer(RIP)-relative
                                 ; Compute the address relative to the current instruction pointer (RIP)
                                 ; Supress warning: implicit DEFAULT ABS is deprecated [-w+implicit-abs-deprecated]
 
-section .data                       ; Section for initialized data
+section .data                   ; Section for initialized data
     StatEncMsg: db "Encrypting...",0Ah
     StatEncMsgLen: equ $-StatEncMsg
     StatDecMsg: db "Decrypting...",0Ah
@@ -85,7 +85,7 @@ section .data                       ; Section for initialized data
     db 0F0h,0F1h,0F2h,0F3h,0F4h,0F5h,0F6h,0F7h,0F8h,0F9h,0FAh,0FBh,0FCh,0FDh,0FEh,0FFh
         
 section .bss                        ; Section for uninitialized data
-    OPTLEN equ 3                   ; Define the length of the encryption & decryption option buffer
+    OPTLEN equ 3                    ; Define the length of the encryption & decryption option buffer
     MSGLEN equ 1024                 ; Define the length of the message buffer
     OptBuff: resb OPTLEN            ; Define the buffer to take user's option    
     MsgBuff: resb MSGLEN            ; Define the buffer to take user's message to be encrypted or decrypted
@@ -119,10 +119,10 @@ ReadOpt:
     
 ; Null terminate the buffer if the there is no character left:
     cmp rax,0                       ; Check if there is no character to be read from stdin
-    jle NullTerminateOptBuff         ; Null terminate the buffer if there exist no character to be read
+    jle NullTerminateOptBuff        ; Null terminate the buffer if there exist no character to be read
     
 ; Null terminate the buffer if the character read is a newline:
-    mov al,byte [rbx]                    ; Put the character read in 8-bit al register
+    mov al,byte [rbx]               ; Put the character read in 8-bit al register
     cmp al,0Ah                      ; Check if the character read is a newline
     je NullTerminateOptBuff         ; Null terminate the buffer if there exist no character to be read
     
@@ -153,7 +153,7 @@ ReadMsg:
 
 ; Null terminate the buffer if the there is no character left:
     cmp rax,0                       ; Check if there is no character to be read from stdin
-    jle NullTerminateMsgBuff         ; Null terminate the buffer if there exist no character to be read from stdin
+    jle NullTerminateMsgBuff        ; Null terminate the buffer if there exist no character to be read from stdin
     
 ; Null terminate the buffer if the character read is a newline:    
     mov al,byte [rbx]               ; Put the character read in AL 8-bit register
@@ -172,14 +172,12 @@ NullTerminateMsgBuff:
     sub rbx,r12                     ; Subtract the offset of the start of the message buffer from the end to get the # of 
                                     ; bytes in the message buffer
     mov r12,rbx                     ; Store the # of bytes in the message buffer in register r12
-
-    call Newline                    ; Print a newline
     
 ; Decide the operation to be performed according to the user's option
     cmp byte [OptBuff],'1'          ; Start an encryption operation if the user choses option 1
-    je SelectEncrypt                      ; Jump to encryption procedure if option 1 is chosen
+    je SelectEncrypt                ; Jump to encryption procedure if option 1 is chosen
     cmp byte [OptBuff],'2'          ; Start a decryption operation if the user choses option 2
-    je SelectDecrypt                      ; Jump to decryption procedure if option 2 is chosen
+    je SelectDecrypt                ; Jump to decryption procedure if option 2 is chosen
     jmp Done
     
 SelectEncrypt:
