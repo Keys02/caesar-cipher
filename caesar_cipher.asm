@@ -1,7 +1,7 @@
 ;   Executable name : caesarcipher
 ;   Version         : 1.0
 ;   Created date    : Mon, 07/08/2026
-;   Last Update     : Mon, 07/08/2026
+;   Last Update     : Mon, 09/08/2026
 ;   Author          : Opoku N. Chris
 ;   Description     : A utility program that encrypts and decrypts
                     ; decrypts text using Caesar Cipher algorithm
@@ -13,12 +13,10 @@
 ;   Using SASM editor build and save the the program as an exe file
 ;
 ; Running the program
-;   exefilename < input file > output file
-;               or
-;   echo "[Message]" | exefilename
-;   to run the program
-;
-;   If an output file is not specified, output goes to stdout
+;   - Run the command ./caesarcipher
+;   - Choose the operation you want to perform
+;   - Enter your message to be encrypted or decrypted
+;   - The encrypted or decrypted message gets printed to stdout
 
 default rel                     ; Use Register Instruction Pointer(RIP)-relative addressing (REL)
                                 ; Compute the address relative to the current instruction pointer (RIP)
