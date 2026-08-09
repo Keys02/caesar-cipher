@@ -20,6 +20,10 @@
 ;
 ;   If an output file is not specified, output goes to stdout
 
+default rel                     ; Use Register Instruction Pointer(RIP)-relative addressing (REL)
+                                ; Compute the address relative to the current instruction pointer (RIP)
+                                ; Supress warning: implicit DEFAULT ABS is deprecated [-w+implicit-abs-deprecated]
+
 section .data                       ; Section for initialized data
     StatEncMsg: db "Encrypting...",0Ah
     StatEncLen: equ $-StatEncMsg
@@ -78,7 +82,7 @@ section .data                       ; Section for initialized data
     db 0F0h,0F1h,0F2h,0F3h,0F4h,0F5h,0F6h,0F7h,0F8h,0F9h,0FAh,0FBh,0FCh,0FDh,0FEh,0FFh
         
 section .bss                        ; Section for uninitialized data
-    OPTLEN equ 1                    ; Define the length of the encryption & decryption option buffer
+    OPTLEN equ 3                   ; Define the length of the encryption & decryption option buffer
     MSGLEN equ 1024                 ; Define the length of the message buffer
     OptBuff: resb OPTLEN            ; Define the buffer to take user's option    
     MsgBuff: resb MSGLEN            ; Define the buffer to take user's message to be encrypted or decrypted
@@ -98,28 +102,42 @@ main:
     mov rdx,QuestLen                ; Pass the # of bytes of the question message
     syscall                         ; Make kernel call
     
-; Prepare registers to collect user's feedback:
-    mov r15,OptBuff                 ; Put the address of the option buffer in r15
+; Prepare registers for processing the uesr's option whether to perform an encryption or decryption operation:
+    lea rbx,[OptBuff]               ; Put the address of the option buffer in rbx    
     
 ; Read the user's option:
 ReadOpt:
     mov rax,0                       ; Declare a sys_read operation
     mov rdi,0                       ; Use File Descriptor 0 ie stdin
-    mov rsi,OptBuff                 ; Pass the address of the buffer to read the user option to
-    mov rdx,OPTLEN                  ; Pass the # of bytes to read at one pass
+    mov rsi,rbx                     ; Pass the address of the buffer to read the user option to
+    mov rdx,1                       ; Pass the # of bytes to read at one pass
     syscall                         ; Make kernel call
-    nop
+    mov [rbx+1],0                   ; Null terminate the buffer
+    
+; Prepare registers for processing the user's message to be encrypted or decrypted:
+    lea rbx,[MsgBuff]               ; Put the start of the message buffer in register rdx
+
 ReadMsg:
 ; Read the message to be encrypted into a buffer
     mov rax,0                       ; Declare a sys_read operation
     mov rdi,0                       ; Use File Descriptor 0 ie stdin
-    mov rsi,MsgBuff                 ; Pass the address of the buffer to read the message to
-    mov rdx,MSGLEN                  ; Pass the # of bytes to read
+    mov rsi,rbx                     ; Pass the address of the buffer to read the message to
+    mov rdx,1                       ; Pass the # of bytes to read
     syscall                         ; Make kernel call
-    mov rbp,rax                     ; Put the sys_read return value in rbp register
+
     cmp rax,0                       ; Check if there is no character to be read from stdin
-    je Done                         ; End the program if there is no character to be read from stdin
-        
+    je NullTerminateBuff            ; Null terminate the buffer is there exist no character to be read from stdin
+    
+    mov al,[rbx]                    ; Put the character read in AL 8-bit register
+    cmp al,0Ah                      ; Check if the character is a newline character
+    je NullTerminateBuff            ; Null terminate the buffer if the character read is a ne    lea rbx,[OptBuff]               ; Put the address of the option buffer in r15wline
+    
+    inc rbx                         ; Increase the buffer address pointer
+    jmp ReadMsg                     ; Read the next byte in the message
+
+NullTerminateBuff:
+    mov byte [rbx],0                ; Null terminate the buffer
+
 ; Print Newline:
     mov rax,1                       ; Declare sys_write operation
     mov rdi,1                       ; Use file descriptior 1 ie stdout
@@ -130,9 +148,9 @@ ReadMsg:
 ; Decide the operation to be performed according to the user's option
     mov rcx,MsgBuff                 ; Put the address of the message buffer in rcx register
     mov r12,rbp                     ; Copy the number of bytes read into r12 register
-    cmp byte [r15],'1'              ; Start an encryption operation if the user choses option 1
+    cmp byte [OptBuff],'1'              ; Start an encryption operation if the user choses option 1
     je Encrypt                      ; Jump to encryption procedure if option 1 is chosen
-    cmp byte [r15],'2'              ; Start a decryption operation if the user choses option 2
+    cmp byte [OptBuff],'2'              ; Start a decryption operation if the user choses option 2
     je Decrypt                      ; Jump to decryption procedure if option 2 is chosen
     
 Encrypt:
@@ -142,7 +160,6 @@ Encrypt:
     mov rsi,StatEncMsg              ; Pass the address of the message
     mov rdx,StatEncLen              ; Pass the length of the message
     syscall                         ; Make the kernel call
-
 ; Prepare registers for the encryption operation
     mov rbx,CaesarCipherEncrypt     ; Put the address of encryption translation table in rbx register
     jmp translate                   ; Translate the chrarcters using the translation table
@@ -169,9 +186,9 @@ translate:
     jmp WriteResult                 ; Jump to the operation if translation is complete
 
 WriteResult:
-    cmp byte [r15],'1'
+    cmp byte [OptBuff],'1'
     jmp WriteEncResultPreMsg
-    cmp byte [r15],'2'
+    cmp byte [OptBuff],'2'
     jmp WriteDecResultPreMsg
     
 WriteEncResultPreMsg:
