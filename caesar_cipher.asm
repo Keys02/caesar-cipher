@@ -101,7 +101,8 @@ main:
     mov rsi,Quest                   ; Pass the address of the question message
     mov rdx,QuestLen                ; Pass the # of bytes of the question message
     syscall                         ; Make kernel call
-    
+
+
 ; Prepare registers for processing the uesr's option whether to perform an encryption or decryption operation:
     lea rbx,[OptBuff]               ; Put the address of the option buffer in rbx    
     
@@ -112,11 +113,26 @@ ReadOpt:
     mov rsi,rbx                     ; Pass the address of the buffer to read the user option to
     mov rdx,1                       ; Pass the # of bytes to read at one pass
     syscall                         ; Make kernel call
-    mov [rbx+1],0                   ; Null terminate the buffer
     
+; Null terminate the buffer if the there is no character left:
+    cmp rax,0                       ; Check if there is no character to be read from stdin
+    je NullTerminateOptBuff         ; Null terminate the buffer if there exist no character to be read
+    
+; Null terminate the buffer if the character read is a newline:
+    mov al,[rbx]                    ; Put the character read in 8-bit al register
+    cmp al,0Ah                      ; Check if the character read is a newline
+    je NullTerminateOptBuff         ; Null terminate the buffer if there exist no character to be read
+    
+; Read the next buffer:
+    inc rbx                         ; Increase the option buffer address pointer
+    jmp ReadOpt                     ; Read the next character
+    
+NullTerminateOptBuff:
+    mov byte [rbx],0                ; Null terminate the buffer
+
+
 ; Prepare registers for processing the user's message to be encrypted or decrypted:
     lea rbx,[MsgBuff]               ; Put the start of the message buffer in register rdx
-
 ReadMsg:
 ; Read the message to be encrypted into a buffer
     mov rax,0                       ; Declare a sys_read operation
@@ -125,17 +141,20 @@ ReadMsg:
     mov rdx,1                       ; Pass the # of bytes to read
     syscall                         ; Make kernel call
 
+; Null terminate the buffer if the there is no character left:
     cmp rax,0                       ; Check if there is no character to be read from stdin
-    je NullTerminateBuff            ; Null terminate the buffer is there exist no character to be read from stdin
+    je NullTerminateMsgBuff            ; Null terminate the buffer if there exist no character to be read from stdin
     
+; Null terminate the buffer if the character read is a newline:    
     mov al,[rbx]                    ; Put the character read in AL 8-bit register
     cmp al,0Ah                      ; Check if the character is a newline character
-    je NullTerminateBuff            ; Null terminate the buffer if the character read is a ne    lea rbx,[OptBuff]               ; Put the address of the option buffer in r15wline
-    
-    inc rbx                         ; Increase the buffer address pointer
+    je NullTerminateMsgBuff            ; Null terminate the buffer if the character read is a newline
+
+; Read the next buffer:
+    inc rbx                         ; Increase the message buffer address pointer
     jmp ReadMsg                     ; Read the next byte in the message
 
-NullTerminateBuff:
+NullTerminateMsgBuff:
     mov byte [rbx],0                ; Null terminate the buffer
 
 ; Print Newline:
@@ -178,7 +197,7 @@ Decrypt:
     
 translate:
     xor rax,rax                     ; Clear out the RAX register to be used for character translation
-    mov al, byte [rcx-1+r12]        ; Fetch a character from the message buffer
+    mov al, byte [rcx-1+r12]        ; Fetch a character from the message buffer ; Segmentation Fault Occurs here because of usage of register r12
     mov al, byte [rbx+rax]          ; Translate the fetched character using encryption translation table
     mov byte [r12], al              ; Put the translation result back into the buffer
     dec r12                         ; Decrement the number of characters in the buffer
