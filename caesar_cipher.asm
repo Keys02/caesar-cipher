@@ -26,9 +26,9 @@ default rel                     ; Use Register Instruction Pointer(RIP)-relative
 
 section .data                       ; Section for initialized data
     StatEncMsg: db "Encrypting...",0Ah
-    StatEncLen: equ $-StatEncMsg
+    StatEncMsgLen: equ $-StatEncMsg
     StatDecMsg: db "Decrypting...",0Ah
-    StatDecLen: equ $-StatDecMsg     
+    StatDecMsgLen: equ $-StatDecMsg     
     DoneMsg: db "..done!",0Ah
     DoneLen: equ $-DoneMsg
     Quest: db "Do you want to perform an Encryption/Decryption",0Ah
@@ -39,7 +39,10 @@ section .data                       ; Section for initialized data
     EncResultPreMsgLen: equ $-EncResultPreMsg
     DecResultPreMsg: db "The decrypted message is "
     DecResultPreMsgLen: equ $-DecResultPreMsg
+    EntryMsg: db "Enter message: "
+    EntryMsgLen: equ $-EntryMsg
     newline: db 0Ah
+    
 
 ; The translation table shifts all alphabets forward by 3 mimicking the Caesar Cipher
 ; encryption algorithm
@@ -116,10 +119,10 @@ ReadOpt:
     
 ; Null terminate the buffer if the there is no character left:
     cmp rax,0                       ; Check if there is no character to be read from stdin
-    je NullTerminateOptBuff         ; Null terminate the buffer if there exist no character to be read
+    jle NullTerminateOptBuff         ; Null terminate the buffer if there exist no character to be read
     
 ; Null terminate the buffer if the character read is a newline:
-    mov al,[rbx]                    ; Put the character read in 8-bit al register
+    mov al,byte [rbx]                    ; Put the character read in 8-bit al register
     cmp al,0Ah                      ; Check if the character read is a newline
     je NullTerminateOptBuff         ; Null terminate the buffer if there exist no character to be read
     
@@ -130,9 +133,16 @@ ReadOpt:
 NullTerminateOptBuff:
     mov byte [rbx],0                ; Null terminate the buffer
 
-
+; Write the Entry Message:
+    mov rax,1                       ; Declare a sys_write operation
+    mov rdi,1                       ; Use file descriptor 1 ie stdout
+    mov rsi,EntryMsg                ; Pass the address of the question message
+    mov rdx,EntryMsgLen             ; Pass the # of bytes of the question message
+    syscall                         ; Make kernel call
+    
 ; Prepare registers for processing the user's message to be encrypted or decrypted:
     lea rbx,[MsgBuff]               ; Put the start of the message buffer in register rdx
+
 ReadMsg:
 ; Read the message to be encrypted into a buffer
     mov rax,0                       ; Declare a sys_read operation
@@ -143,12 +153,12 @@ ReadMsg:
 
 ; Null terminate the buffer if the there is no character left:
     cmp rax,0                       ; Check if there is no character to be read from stdin
-    je NullTerminateMsgBuff            ; Null terminate the buffer if there exist no character to be read from stdin
+    jle NullTerminateMsgBuff         ; Null terminate the buffer if there exist no character to be read from stdin
     
 ; Null terminate the buffer if the character read is a newline:    
-    mov al,[rbx]                    ; Put the character read in AL 8-bit register
+    mov al,byte [rbx]               ; Put the character read in AL 8-bit register
     cmp al,0Ah                      ; Check if the character is a newline character
-    je NullTerminateMsgBuff            ; Null terminate the buffer if the character read is a newline
+    je NullTerminateMsgBuff         ; Null terminate the buffer if the character read is a newline
 
 ; Read the next buffer:
     inc rbx                         ; Increase the message buffer address pointer
@@ -171,7 +181,6 @@ NullTerminateMsgBuff:
     syscall                         ; Make the sys_write system call
     
 ; Decide the operation to be performed according to the user's option
-    lea rcx,[MsgBuff]               ; Put the address of the message buffer in rcx register
     cmp byte [OptBuff],'1'          ; Start an encryption operation if the user choses option 1
     je Encrypt                      ; Jump to encryption procedure if option 1 is chosen
     cmp byte [OptBuff],'2'          ; Start a decryption operation if the user choses option 2
@@ -182,11 +191,12 @@ Encrypt:
     mov rax,1                       ; Declare a sys_write operation
     mov rdi,2                       ; Use File Descriptor 2 ie stderr
     mov rsi,StatEncMsg              ; Pass the address of the message
-    mov rdx,StatEncLen              ; Pass the length of the message
+    mov rdx,StatEncMsgLen           ; Pass the length of the message
     syscall                         ; Make the kernel call
     
 ; Prepare registers for the encryption operation
     mov rbx,CaesarCipherEncrypt     ; Put the address of encryption translation table in rbx register
+    lea rcx,[MsgBuff]               ; Put the address of the message buffer in rcx register
     jmp translate                   ; Translate the chrarcters using the translation table
    
 Decrypt:    
@@ -194,19 +204,19 @@ Decrypt:
     mov rax,1                       ; Declare a sys_write operation
     mov rdi,2                       ; Use File Descriptor 2 ie stderr
     mov rsi,StatDecMsg              ; Pass the address of the message
-    mov rdx,StatDecLen              ; Pass the length of the message
-    syscall                         ; Make the kernel call
+    mov rdx,StatDecMsgLen              ; Pass the length of the message
+    syscall                            ; Make the kernel call
     
 ; Prepare registers for the decryption operation:
     mov rbx,CaesarCipherDecrypt     ; Put the address of decryption translation table in rbx register
+    lea rcx,[MsgBuff]               ; Put the address of the message buffer in rcx register
     jmp translate                   ; Translate the characters using the translation table
     
 translate:
-    nop
-;    xor rax,rax                     ; Clear out the RAX register to be used for character translation
+    xor rax,rax                     ; Clear out the RAX register to be used for character translation
     mov al, byte [rcx-1+r12]        ; Fetch a character from the message buffer ; Segmentation Fault Occurs here because of usage of register r12
     mov al, byte [rbx+rax]          ; Translate the fetched character using encryption translation table
-    mov byte [r12], al              ; Put the translation result back into the buffer
+    mov byte [rcx-1+r12], al              ; Put the translation result back into the buffer
     dec r12                         ; Decrement the number of characters in the buffer
     jnz translate                   ; Keep translating the characters if buffer is not empty
     jmp WriteResult                 ; Jump to the operation if translation is complete
