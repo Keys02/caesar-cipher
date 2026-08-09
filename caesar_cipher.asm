@@ -187,7 +187,7 @@ SelectEncrypt:
     mov rsi,StatEncMsg              ; Pass the address of the status message
     mov rdx,StatEncMsgLen           ; Pass the # of bytes of the status message
     mov rbx,CaesarCipherEncrypt     ; Put the address of encryption translation table in rbx register
-    jmp PreRegForTranslate
+    jmp DoTranslate
    
 SelectDecrypt:    
 ; Display the decryption status message via stderr:
@@ -195,8 +195,7 @@ SelectDecrypt:
     mov rdx,StatDecMsgLen           ; Pass the # of the bytes of the status message
     mov rbx,CaesarCipherDecrypt     ; Put the address of decryption translation table in rbx register
 
-
-PreRegForTranslate:
+DoTranslate:
     ; Print the stat message according user option
     mov rax,1                       ; Declare a sys_write operation
     mov rdi,2                       ; Use File Descriptor 2 ie stderr
@@ -205,15 +204,15 @@ PreRegForTranslate:
     ; Prepare registers for the encryption or decryption operation
     lea rcx,[MsgBuff]               ; Put the address of the message buffer in rcx register
     mov rsi,r12                     ; Put the # of bytes in the message buffer in rsi
-    jmp translate                   ; Translate the characters using the translation table
+    jmp Translate                   ; Translate the characters using the translation table
     
-translate:
+Translate:
     xor rax,rax                     ; Clear out the RAX register to be used for character translation
     mov al, byte [rcx-1+rsi]        ; Fetch a character from the message buffer ; Segmentation Fault Occurs here because of usage of register r12
     mov al, byte [rbx+rax]          ; Translate the fetched character using encryption or decryption translation table
     mov byte [rcx-1+rsi],al         ; Put the translation result back into the message buffer
     dec rsi                         ; Decrement the number of characters in the buffer
-    jnz translate                   ; Keep translating the characters if buffer is not empty
+    jnz Translate                   ; Keep translating the characters if buffer is not empty
     jmp WriteResult                 ; Jump to the operation if translation is complete
 
 WriteResult:
@@ -223,20 +222,19 @@ WriteResult:
     je WriteDecResultPreMsg
     
 WriteEncResultPreMsg:
-    mov rax,1                       ; Declare sys_write operation
-    mov rdi,1                       ; Use File Descriptor 1 ie stdout
     mov rsi,EncResultPreMsg         ; Pass the address of the message buffer
     mov rdx,EncResultPreMsgLen      ; Pass the # of bytes in the message buffer
-    syscall                         ; Make kernel call
-    jmp WriteOptResult              ; Jump to the procedure which outputs the content of the encrypted message
-    
+    jmp WritePreMsg
+
 WriteDecResultPreMsg:
-    mov rax,1                       ; Declare sys_write operation
-    mov rdi,1                       ; Use File Descriptor 1 ie stdout
     mov rsi,DecResultPreMsg         ; Pass the address of the message buffer
     mov rdx,DecResultPreMsgLen      ; Pass the # of bytes in the message buffer
+    
+WritePreMsg:
+    mov rax,1                       ; Declare sys_write operation
+    mov rdi,1                       ; Use File Descriptor 1 ie stdout
     syscall                         ; Make kernel call
-    jmp WriteOptResult              ; Jump to the procedure which outputs the content of the decrypted message
+    jmp WriteOptResult              ; Jump to the procedure which outputs the content of the encrypted message 
 
 WriteOptResult:
     mov rax,1                       ; Declare sys_write operation
