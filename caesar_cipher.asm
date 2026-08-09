@@ -185,6 +185,7 @@ NullTerminateMsgBuff:
     je Encrypt                      ; Jump to encryption procedure if option 1 is chosen
     cmp byte [OptBuff],'2'          ; Start a decryption operation if the user choses option 2
     je Decrypt                      ; Jump to decryption procedure if option 2 is chosen
+    jmp Done
     
 Encrypt:
 ; Display the encryption status message via stderr:
@@ -197,6 +198,7 @@ Encrypt:
 ; Prepare registers for the encryption operation
     mov rbx,CaesarCipherEncrypt     ; Put the address of encryption translation table in rbx register
     lea rcx,[MsgBuff]               ; Put the address of the message buffer in rcx register
+    mov rsi,r12                     ; Put the # of bytes in the message buffer in rsi
     jmp translate                   ; Translate the chrarcters using the translation table
    
 Decrypt:    
@@ -210,22 +212,23 @@ Decrypt:
 ; Prepare registers for the decryption operation:
     mov rbx,CaesarCipherDecrypt     ; Put the address of decryption translation table in rbx register
     lea rcx,[MsgBuff]               ; Put the address of the message buffer in rcx register
+    mov rsi,r12                     ; Put the # of bytes in the message buffer in rsi
     jmp translate                   ; Translate the characters using the translation table
     
 translate:
     xor rax,rax                     ; Clear out the RAX register to be used for character translation
     mov al, byte [rcx-1+r12]        ; Fetch a character from the message buffer ; Segmentation Fault Occurs here because of usage of register r12
     mov al, byte [rbx+rax]          ; Translate the fetched character using encryption translation table
-    mov byte [rcx-1+r12], al              ; Put the translation result back into the buffer
+    mov byte [rcx-1+rsi], al        ; Put the translation result back into the buffer
     dec r12                         ; Decrement the number of characters in the buffer
     jnz translate                   ; Keep translating the characters if buffer is not empty
     jmp WriteResult                 ; Jump to the operation if translation is complete
 
 WriteResult:
     cmp byte [OptBuff],'1'
-    jmp WriteEncResultPreMsg
+    je WriteEncResultPreMsg
     cmp byte [OptBuff],'2'
-    jmp WriteDecResultPreMsg
+    je WriteDecResultPreMsg
     
 WriteEncResultPreMsg:
     mov rax,1                       ; Declare sys_write operation
@@ -247,7 +250,7 @@ WriteOptResult:
     mov rax,1                       ; Declare sys_write operation
     mov rdi,1                       ; Use File Descriptor 1 ie stdout
     mov rsi,MsgBuff                 ; Pass the address of the message buffer
-    mov rdx,rbp                     ; Pass the # of bytes in the message buffer
+    mov rdx,r12                     ; Pass the # of bytes in the message buffer
     syscall                         ; Make kernel call
     jmp ReadMsg                     ; Loop back and load another buffer with with text from stdin
 
