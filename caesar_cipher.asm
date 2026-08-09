@@ -206,8 +206,8 @@ Decrypt:
     mov rax,1                       ; Declare a sys_write operation
     mov rdi,2                       ; Use File Descriptor 2 ie stderr
     mov rsi,StatDecMsg              ; Pass the address of the message
-    mov rdx,StatDecMsgLen              ; Pass the length of the message
-    syscall                            ; Make the kernel call
+    mov rdx,StatDecMsgLen           ; Pass the length of the message
+    syscall                         ; Make the kernel call
     
 ; Prepare registers for the decryption operation:
     mov rbx,CaesarCipherDecrypt     ; Put the address of decryption translation table in rbx register
@@ -217,10 +217,10 @@ Decrypt:
     
 translate:
     xor rax,rax                     ; Clear out the RAX register to be used for character translation
-    mov al, byte [rcx-1+r12]        ; Fetch a character from the message buffer ; Segmentation Fault Occurs here because of usage of register r12
-    mov al, byte [rbx+rax]          ; Translate the fetched character using encryption translation table
-    mov byte [rcx-1+rsi], al        ; Put the translation result back into the buffer
-    dec r12                         ; Decrement the number of characters in the buffer
+    mov al, byte [rcx-1+rsi]        ; Fetch a character from the message buffer ; Segmentation Fault Occurs here because of usage of register r12
+    mov al, byte [rbx+rax]          ; Translate the fetched character using encryption or decryption translation table
+    mov byte [rcx-1+rsi],al         ; Put the translation result back into the message buffer
+    dec rsi                         ; Decrement the number of characters in the buffer
     jnz translate                   ; Keep translating the characters if buffer is not empty
     jmp WriteResult                 ; Jump to the operation if translation is complete
 
@@ -252,7 +252,6 @@ WriteOptResult:
     mov rsi,MsgBuff                 ; Pass the address of the message buffer
     mov rdx,r12                     ; Pass the # of bytes in the message buffer
     syscall                         ; Make kernel call
-    jmp ReadMsg                     ; Loop back and load another buffer with with text from stdin
 
 Done:
     mov rax,1                       ; Declare a sys_write call operation
