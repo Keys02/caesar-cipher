@@ -31,7 +31,7 @@ section .data                       ; Section for initialized data
     StatDecLen: equ $-StatDecMsg     
     DoneMsg: db "..done!",0Ah
     DoneLen: equ $-DoneMsg
-    Quest: db "Do you want perform an Encryption/Decryption",0Ah
+    Quest: db "Do you want to perform an Encryption/Decryption",0Ah
            db "1: Encryption",0Ah
            db "2: Decryption",0Ah
     QuestLen: equ $-Quest
@@ -110,7 +110,7 @@ main:
 ReadOpt:
     mov rax,0                       ; Declare a sys_read operation
     mov rdi,0                       ; Use File Descriptor 0 ie stdin
-    mov rsi,rbx                     ; Pass the address of the buffer to read the user option to
+    mov rsi,rbx                     ; Pass the address ofAdd variabloe... the buffer to read the user option to
     mov rdx,1                       ; Pass the # of bytes to read at one pass
     syscall                         ; Make kernel call
     
@@ -156,6 +156,12 @@ ReadMsg:
 
 NullTerminateMsgBuff:
     mov byte [rbx],0                ; Null terminate the buffer
+    
+; Get the number of bytes in the message buffer:
+    lea r12,[MsgBuff]               ; Put the start of the message buffer in register r12
+    sub rbx,r12                     ; Subtract the offset of the start of the message buffer from the end to get the # of 
+                                    ; bytes in the message buffer
+    mov r12,rbx                     ; Store the # of bytes in the message buffer in register r12
 
 ; Print Newline:
     mov rax,1                       ; Declare sys_write operation
@@ -165,11 +171,10 @@ NullTerminateMsgBuff:
     syscall                         ; Make the sys_write system call
     
 ; Decide the operation to be performed according to the user's option
-    mov rcx,MsgBuff                 ; Put the address of the message buffer in rcx register
-    mov r12,rbp                     ; Copy the number of bytes read into r12 register
-    cmp byte [OptBuff],'1'              ; Start an encryption operation if the user choses option 1
+    lea rcx,[MsgBuff]               ; Put the address of the message buffer in rcx register
+    cmp byte [OptBuff],'1'          ; Start an encryption operation if the user choses option 1
     je Encrypt                      ; Jump to encryption procedure if option 1 is chosen
-    cmp byte [OptBuff],'2'              ; Start a decryption operation if the user choses option 2
+    cmp byte [OptBuff],'2'          ; Start a decryption operation if the user choses option 2
     je Decrypt                      ; Jump to decryption procedure if option 2 is chosen
     
 Encrypt:
@@ -179,6 +184,7 @@ Encrypt:
     mov rsi,StatEncMsg              ; Pass the address of the message
     mov rdx,StatEncLen              ; Pass the length of the message
     syscall                         ; Make the kernel call
+    
 ; Prepare registers for the encryption operation
     mov rbx,CaesarCipherEncrypt     ; Put the address of encryption translation table in rbx register
     jmp translate                   ; Translate the chrarcters using the translation table
@@ -196,7 +202,8 @@ Decrypt:
     jmp translate                   ; Translate the characters using the translation table
     
 translate:
-    xor rax,rax                     ; Clear out the RAX register to be used for character translation
+    nop
+;    xor rax,rax                     ; Clear out the RAX register to be used for character translation
     mov al, byte [rcx-1+r12]        ; Fetch a character from the message buffer ; Segmentation Fault Occurs here because of usage of register r12
     mov al, byte [rbx+rax]          ; Translate the fetched character using encryption translation table
     mov byte [r12], al              ; Put the translation result back into the buffer
