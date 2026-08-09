@@ -177,35 +177,32 @@ NullTerminateMsgBuff:
     
 ; Decide the operation to be performed according to the user's option
     cmp byte [OptBuff],'1'          ; Start an encryption operation if the user choses option 1
-    je Encrypt                      ; Jump to encryption procedure if option 1 is chosen
+    je SelectEncrypt                      ; Jump to encryption procedure if option 1 is chosen
     cmp byte [OptBuff],'2'          ; Start a decryption operation if the user choses option 2
-    je Decrypt                      ; Jump to decryption procedure if option 2 is chosen
+    je SelectDecrypt                      ; Jump to decryption procedure if option 2 is chosen
     jmp Done
     
-Encrypt:
+SelectEncrypt:
 ; Display the encryption status message via stderr:
-    mov rax,1                       ; Declare a sys_write operation
-    mov rdi,2                       ; Use File Descriptor 2 ie stderr
-    mov rsi,StatEncMsg              ; Pass the address of the message
-    mov rdx,StatEncMsgLen           ; Pass the length of the message
-    syscall                         ; Make the kernel call
-    
-; Prepare registers for the encryption operation
+    mov rsi,StatEncMsg              ; Pass the address of the status message
+    mov rdx,StatEncMsgLen           ; Pass the # of bytes of the status message
     mov rbx,CaesarCipherEncrypt     ; Put the address of encryption translation table in rbx register
-    lea rcx,[MsgBuff]               ; Put the address of the message buffer in rcx register
-    mov rsi,r12                     ; Put the # of bytes in the message buffer in rsi
-    jmp translate                   ; Translate the chrarcters using the translation table
+    jmp PreRegForTranslate
    
-Decrypt:    
+SelectDecrypt:    
 ; Display the decryption status message via stderr:
+    mov rsi,StatDecMsg              ; Pass the address of the status message
+    mov rdx,StatDecMsgLen           ; Pass the # of the bytes of the status message
+    mov rbx,CaesarCipherDecrypt     ; Put the address of decryption translation table in rbx register
+
+
+PreRegForTranslate:
+    ; Print the stat message according user option
     mov rax,1                       ; Declare a sys_write operation
     mov rdi,2                       ; Use File Descriptor 2 ie stderr
-    mov rsi,StatDecMsg              ; Pass the address of the message
-    mov rdx,StatDecMsgLen           ; Pass the length of the message
-    syscall                         ; Make the kernel call
+    syscall                         ; Make kernell call
     
-; Prepare registers for the decryption operation:
-    mov rbx,CaesarCipherDecrypt     ; Put the address of decryption translation table in rbx register
+    ; Prepare registers for the encryption or decryption operation
     lea rcx,[MsgBuff]               ; Put the address of the message buffer in rcx register
     mov rsi,r12                     ; Put the # of bytes in the message buffer in rsi
     jmp translate                   ; Translate the characters using the translation table
