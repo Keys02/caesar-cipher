@@ -255,15 +255,15 @@ Done:
     mov rsi,DoneMsg                 ; Pass address of the message
     mov rdx,DoneLen                 ; Pass the length of the message
     syscall                         ; Make kernel call
-
-; Print Newline:
+    
+; All done! 
+    ret                             ; Return to the glibc shutdown code
+    
+; Newline Helper Routine:
 Newline:
     mov rax,1                       ; Declare sys_write operation
     mov rdi,1                       ; Use file descriptior 1 ie stdout
     mov rsi,newline                 ; Pass the address of the newline character
     mov rdx,1                       ; Pass the length of the newline character
     syscall                         ; Make the sys_write system call
-    
-    
-; All done! 
-    ret                             ; Return to the glibc shutdown code
+    ret
