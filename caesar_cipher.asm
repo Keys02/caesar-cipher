@@ -3,8 +3,8 @@
 ;   Created date    : Mon, 07/08/2026
 ;   Last Update     : Mon, 09/08/2026
 ;   Author          : Opoku N. Chris
-;   Description     : A utility program that encrypts and decrypts
-                    ; decrypts text using Caesar Cipher algorithm
+;   Description     : An interactive utility program that encrypts 
+;                     and decrypts text using Caesar Cipher algorithm
 ;
 ; Build using these commands:
 ;   nasm -­f elf64 -­g -­ F stabs caesarcipher.asm
