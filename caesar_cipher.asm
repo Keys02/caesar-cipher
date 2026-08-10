@@ -106,9 +106,14 @@ main:
 
 ; Prepare registers for processing the uesr's option whether to perform an encryption or decryption operation:
     lea rbx,[OptBuff]               ; Put the address of the option buffer in rbx    
+    xor r14,r14                     ; Clear register r14 to bound the buffer to prevent it from overflowing
     
 ; Read the user's option:
 ReadOpt:
+    cmp r14,OPTLEN-1                ; Check if the # of bytes in the buffer is greater than 1023 bytes
+    je NullTerminateOptBuff         ; Null terminate the option buffer at 1023 OptBuffer address if the text read 
+                                    ; from stdin is greater than or equal to 1023 bytes
+    
     mov rax,0                       ; Declare a sys_read operation
     mov rdi,0                       ; Use File Descriptor 0 ie stdin
     mov rsi,rbx                     ; Pass the address ofAdd variabloe... the buffer to read the user option to
@@ -126,6 +131,7 @@ ReadOpt:
     
 ; Read the next buffer:
     inc rbx                         ; Increase the option buffer address pointer
+    inc r14                         ; Increase the buffer bytes counter in the buffer overflow check register
     jmp ReadOpt                     ; Read the next character
     
 NullTerminateOptBuff:
