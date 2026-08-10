@@ -1,7 +1,7 @@
 ;   Executable name : caesarcipherencrypt
 ;   Version         : 1.0
 ;   Created date    : Mon, 07/08/2026
-;   Last Update     : Mon, 07/08/2026
+;   Last Update     : Mon, 10/08/2026
 ;   Author          : Opoku N. Chris
 ;   Description     : A utility program that encrypts text using Caesar
 ;                     Cipher algorithm
@@ -92,7 +92,6 @@ translate:
     jnz translate                   ; If there are more characters to be translated, repeat
     
 ; Write the buffer full of translated text to stdout:
-write:
     mov rax,1                       ; Declare a sys_write operation
     mov rdi,1                       ; Use File Descriptor 1 ie stdout
     mov rsi,ReadBuffer              ; Pass the address of the buffer to print
