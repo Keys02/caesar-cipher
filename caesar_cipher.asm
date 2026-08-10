@@ -215,7 +215,7 @@ DoTranslate:
     
 Translate:
     xor rax,rax                     ; Clear out the RAX register to be used for character translation
-    mov al, byte [rcx-1+rsi]        ; Fetch a character from the message buffer ; Segmentation Fault Occurs here because of usage of register r12
+    mov al, byte [rcx-1+rsi]        ; Fetch a character from the message buffer
     mov al, byte [rbx+rax]          ; Translate the fetched character using encryption or decryption translation table
     mov byte [rcx-1+rsi],al         ; Put the translation result back into the message buffer
     dec rsi                         ; Decrement the number of characters in the buffer
@@ -223,10 +223,10 @@ Translate:
     jmp WriteResult                 ; Jump to the operation if translation is complete
 
 WriteResult:
-    cmp byte [OptBuff],'1'
-    je WriteEncResultPreMsg
-    cmp byte [OptBuff],'2'
-    je WriteDecResultPreMsg
+    cmp byte [OptBuff],'1'          ; Check if the user selected an encryption operation
+    je WriteEncResultPreMsg         ; Write the encryption pre-message to stdout
+    cmp byte [OptBuff],'2'          ; Check if the user selected a decryption operation
+    je WriteDecResultPreMsg         ; Write the decryption pre-message to stdout
     
 WriteEncResultPreMsg:
     mov rsi,EncResultPreMsg         ; Pass the address of the message buffer
