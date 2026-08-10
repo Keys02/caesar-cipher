@@ -1,7 +1,7 @@
 ;   Executable name : caesarcipher
 ;   Version         : 1.0
 ;   Created date    : Mon, 07/08/2026
-;   Last Update     : Mon, 09/08/2026
+;   Last Update     : Mon, 10/08/2026
 ;   Author          : Opoku N. Chris
 ;   Description     : An interactive utility program that encrypts 
 ;                     and decrypts text using Caesar Cipher algorithm
@@ -82,11 +82,10 @@ section .data                   ; Section for initialized data
     db 0F0h,0F1h,0F2h,0F3h,0F4h,0F5h,0F6h,0F7h,0F8h,0F9h,0FAh,0FBh,0FCh,0FDh,0FEh,0FFh
         
 section .bss                        ; Section for uninitialized data
-    OPTLEN equ 3                    ; Define the length of the encryption & decryption option buffer
-    MSGLEN equ 1025                 ; Define the length of the message buffer
+    OPTLEN equ 2                    ; Define the length of the encryption & decryption option buffer ie reads a byte + \0
+    MSGLEN equ 1025                 ; Define the length of the message buffer ie reads 1024 bytes + \0
     OptBuff: resb OPTLEN            ; Define the buffer to take user's option    
     MsgBuff: resb MSGLEN            ; Define the buffer to take user's message to be encrypted or decrypted
-
 
 section .text                       ; Section for the code
 
@@ -109,8 +108,9 @@ main:
     
 ; Read the user's option:
 ReadOpt:
+; Null terminate the option buffer if 2 bytes of characters are read from stdin at one pass:
     cmp r14,OPTLEN-1                ; Check if the # of bytes in the buffer is greater than 2 bytes
-    je NullTerminateOptBuff         ; Null terminate the option buffer at 2 OptBuffer address if the text read 
+    ja NullTerminateOptBuff         ; Null terminate the option buffer at 2 OptBuffer address if the text read 
                                     ; from stdin is greater than or equal to 2 bytes
     
     mov rax,0                       ; Declare a sys_read operation
@@ -148,8 +148,9 @@ NullTerminateOptBuff:
     xor r14,r14                     ; Clear register r14 to bound to bound the option buffer to prevent it from overflowing
 
 ReadMsg:
+; Null terminate the message buffer if 1024 bytes of characters are read from stdin at one pass:
     cmp r14,MSGLEN-1                ; Check if the # of bytes in the buffer is greater than 1024 bytes
-    je NullTerminateMsgBuff         ; Null terminate the message buffer at 1024 OptBuffer address if the text read 
+    ja NullTerminateMsgBuff         ; Null terminate the message buffer at 1024 OptBuffer address if the text read 
                                     ; from stdin is greater than or equal to 1024 bytes
 
 ; Read the message to be encrypted into a buffer
