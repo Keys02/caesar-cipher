@@ -41,7 +41,6 @@ section .data                   ; Section for initialized data
     EntryMsgLen: equ $-EntryMsg
     newline: db 0Ah
     
-
 ; The translation table shifts all alphabets forward by 3 mimicking the Caesar Cipher
 ; encryption algorithm
     CaesarCipherEncrypt:
@@ -84,7 +83,7 @@ section .data                   ; Section for initialized data
         
 section .bss                        ; Section for uninitialized data
     OPTLEN equ 3                    ; Define the length of the encryption & decryption option buffer
-    MSGLEN equ 1024                 ; Define the length of the message buffer
+    MSGLEN equ 1025                 ; Define the length of the message buffer
     OptBuff: resb OPTLEN            ; Define the buffer to take user's option    
     MsgBuff: resb MSGLEN            ; Define the buffer to take user's message to be encrypted or decrypted
 
@@ -106,13 +105,13 @@ main:
 
 ; Prepare registers for processing the uesr's option whether to perform an encryption or decryption operation:
     lea rbx,[OptBuff]               ; Put the address of the option buffer in rbx    
-    xor r14,r14                     ; Clear register r14 to bound the buffer to prevent it from overflowing
+    xor r14,r14                     ; Clear register r14 to bound to bound the option buffer to prevent it from overflowing
     
 ; Read the user's option:
 ReadOpt:
-    cmp r14,OPTLEN-1                ; Check if the # of bytes in the buffer is greater than 1023 bytes
-    je NullTerminateOptBuff         ; Null terminate the option buffer at 1023 OptBuffer address if the text read 
-                                    ; from stdin is greater than or equal to 1023 bytes
+    cmp r14,OPTLEN-1                ; Check if the # of bytes in the buffer is greater than 2 bytes
+    je NullTerminateOptBuff         ; Null terminate the option buffer at 2 OptBuffer address if the text read 
+                                    ; from stdin is greater than or equal to 2 bytes
     
     mov rax,0                       ; Declare a sys_read operation
     mov rdi,0                       ; Use File Descriptor 0 ie stdin
@@ -146,8 +145,13 @@ NullTerminateOptBuff:
     
 ; Prepare registers for processing the user's message to be encrypted or decrypted:
     lea rbx,[MsgBuff]               ; Put the start of the message buffer in register rdx
+    xor r14,r14                     ; Clear register r14 to bound to bound the option buffer to prevent it from overflowing
 
 ReadMsg:
+    cmp r14,MSGLEN-1                ; Check if the # of bytes in the buffer is greater than 1024 bytes
+    je NullTerminateMsgBuff         ; Null terminate the message buffer at 1024 OptBuffer address if the text read 
+                                    ; from stdin is greater than or equal to 1024 bytes
+
 ; Read the message to be encrypted into a buffer
     mov rax,0                       ; Declare a sys_read operation
     mov rdi,0                       ; Use File Descriptor 0 ie stdin
@@ -166,6 +170,7 @@ ReadMsg:
 
 ; Read the next buffer:
     inc rbx                         ; Increase the message buffer address pointer
+    inc r14                         ; Increase the buffer bytes counter in the buffer overflow check register
     jmp ReadMsg                     ; Read the next byte in the message
 
 NullTerminateMsgBuff:
