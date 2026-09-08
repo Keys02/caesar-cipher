@@ -102,7 +102,7 @@ main:
     syscall                         ; Make kernel call
 
 
-; Prepare registers for processing the uesr's option whether to perform an encryption or decryption operation:
+; Prepare registers for processing the user's option whether to perform an encryption or decryption operation:
     lea rbx,[OptBuff]               ; Put the address of the option buffer in rbx    
     xor r14,r14                     ; Clear register r14 to bound to bound the option buffer to prevent it from overflowing
     
@@ -115,7 +115,7 @@ ReadOpt:
     
     mov rax,0                       ; Declare a sys_read operation
     mov rdi,0                       ; Use File Descriptor 0 ie stdin
-    mov rsi,rbx                     ; Pass the address ofAdd variabloe... the buffer to read the user option to
+    mov rsi,rbx                     ; Pass the address of the buffer to read the user option to
     mov rdx,1                       ; Pass the # of bytes to read at one pass
     syscall                         ; Make kernel call
     
