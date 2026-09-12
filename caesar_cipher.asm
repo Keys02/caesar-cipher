@@ -207,12 +207,11 @@ DoTranslate:
     ; Print the stat message according user option
     mov rax,1                       ; Declare a sys_write operation
     mov rdi,2                       ; Use File Descriptor 2 ie stderr
-    syscall                         ; Make kernell call
+    syscall                         ; Make kernel call
     
     ; Prepare registers for the encryption or decryption operation
     lea rcx,[MsgBuff]               ; Put the address of the message buffer in rcx register
     mov rsi,r12                     ; Put the # of bytes in the message buffer in rsi
-    jmp Translate                   ; Translate the characters using the translation table
     
 Translate:
     xor rax,rax                     ; Clear out the RAX register to be used for character translation
